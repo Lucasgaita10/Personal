@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sg-primary: #780000;
+  --sg-bg: #ffffff;
+  --sg-surface: #fafafa;
+  --sg-border: #e5e5e5;
+  --sg-text: #0a0a0a;
+  --sg-muted: #6b6b6b;
+}
+
+* {
+  border-color: var(--sg-border);
+}
+
+body {
+  background: var(--sg-bg);
+  color: var(--sg-text);
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  letter-spacing: -0.005em;
+}
+
+::selection {
+  background: var(--sg-primary);
+  color: #fff;
+}
+
+.sg-card {
+  background: #fff;
+  border: 1px solid var(--sg-border);
+  border-radius: 6px;
+}
+.sg-card-muted {
+  background: var(--sg-surface);
+  border: 1px solid var(--sg-border);
+  border-radius: 6px;
+}
+.sg-band {
+  background: var(--sg-primary);
+  color: #fff;
+  padding: 6px 14px;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+.sg-divider {
+  height: 1px;
+  background: var(--sg-border);
+}
+.sg-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  font-size: 11px;
+  border-radius: 11px;
+  background: var(--sg-surface);
+  border: 1px solid var(--sg-border);
+  color: var(--sg-muted);
+  letter-spacing: 0.02em;
+}
+.sg-pill.maroon {
+  background: var(--sg-primary);
+  color: #fff;
+  border-color: var(--sg-primary);
+}

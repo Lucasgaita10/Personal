@@ -1,0 +1,28 @@
+{
+  "name": "stone-gate",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Stone Gate — Institutional Real Estate Investment Operating System",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @stone-gate/db prisma:generate",
+    "db:migrate": "pnpm --filter @stone-gate/db prisma:migrate",
+    "db:seed": "pnpm --filter @stone-gate/db seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0",
+    "prettier": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

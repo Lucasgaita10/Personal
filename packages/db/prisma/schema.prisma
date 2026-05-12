@@ -1,0 +1,617 @@
+// ────────────────────────────────────────────────────────────────────
+// Stone Gate — Prisma schema
+// PostgreSQL with pgvector extension.
+// ────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+// ─── Auth & Governance ──────────────────────────────────────────────
+
+enum UserRole {
+  PRINCIPAL
+  ANALYST
+  ACQUISITIONS_DIRECTOR
+  COMPLIANCE
+  ADMIN
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  role         UserRole      @default(ANALYST)
+  active       Boolean       @default(true)
+  apiKeys      ApiKey[]
+  auditLogs    AuditLog[]
+  notes        Note[]
+  comments     Comment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// API keys (Anthropic, etc.) — encrypted at rest with AES-256-GCM.
+model ApiKey {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String   // "anthropic" | "voyage" | ...
+  ciphertext   Bytes    // encrypted payload
+  iv           Bytes    // GCM iv
+  authTag      Bytes    // GCM auth tag
+  label        String?
+  lastUsedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, provider])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String   // e.g. "opportunity.create", "document.upload"
+  entityType  String?
+  entityId    String?
+  metadata    Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+}
+
+// ─── Client / Investor Profile ─────────────────────────────────────
+
+enum RiskAppetite {
+  CORE
+  CORE_PLUS
+  VALUE_ADD
+  OPPORTUNISTIC
+}
+
+model Client {
+  id                  String              @id @default(cuid())
+  name                String
+  type                String              // family office, pension, sovereign, hnwi, ...
+  contactEmail        String?
+  contactPhone        String?
+  riskAppetite        RiskAppetite        @default(CORE_PLUS)
+  timeHorizonYears    Int?
+  liquidityNeedsNote  String?
+  geographyPrefs      String[]            @default([])
+  sectorPrefs         String[]            @default([])
+  esgPrefs            Json?
+  taxConsiderations   String?
+  leverageMaxLtv      Decimal?            @db.Decimal(5, 2)
+  mandateSummary      String?             // AI-generated
+  internalNotes       String?
+  positions           PortfolioPosition[]
+  opportunities       Opportunity[]
+  decisions           InvestmentDecision[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+model PortfolioPosition {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assetName     String
+  propertyType  String
+  geography     String
+  equityInvested Decimal @db.Decimal(18, 2)
+  currentValue  Decimal? @db.Decimal(18, 2)
+  noi           Decimal? @db.Decimal(18, 2)
+  ltv           Decimal? @db.Decimal(5, 2)
+  vintageYear   Int?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// ─── Opportunity ───────────────────────────────────────────────────
+
+enum OpportunityStage {
+  NEW
+  INITIAL_SCREENING
+  UNDER_REVIEW
+  DUE_DILIGENCE
+  IC_PREPARATION
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum Recommendation {
+  PROCEED
+  PROCEED_WITH_CONDITIONS
+  REJECT
+  NEED_MORE_INFO
+}
+
+model Opportunity {
+  id                  String                @id @default(cuid())
+  clientId            String?
+  client              Client?               @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  name                String
+  sponsor             String?
+  propertyType        String?
+  subType             String?
+  geography           String?
+  city                String?
+  country             String?
+  size                String?               // gross area / scale, e.g. "320,000 sqft"
+  units               Int?                  // unit count — apartments / keys / buildings / stores
+  unitMix             String?               // "1BR 35%, 2BR 50%, 3BR 15%"
+  vintageYear         Int?                  // year built / oldest building
+  askingEquity        Decimal?              @db.Decimal(18, 2)
+  totalCapitalization Decimal?              @db.Decimal(18, 2)
+  targetIrr           Decimal?              @db.Decimal(6, 2)
+  targetMoic          Decimal?              @db.Decimal(6, 2)
+  holdPeriodYears     Int?
+  stage               OpportunityStage      @default(NEW)
+  recommendation      Recommendation?
+  opportunityScore    Decimal?              @db.Decimal(4, 2)  // 0-10
+  riskScore           Decimal?              @db.Decimal(4, 2)
+  confidenceScore    Decimal?              @db.Decimal(4, 2)
+  icReadinessScore    Decimal?              @db.Decimal(4, 2)
+  briefingNotes       String?               // free-text intake brief: goals,
+                                            // preferences, particularities — fed
+                                            // to AI for analysis context
+  analysisVersion     Int                   @default(1) // bumps on reset/re-run
+  thesis              String?
+  executiveSummary    String?
+  swot                Json?
+  bullCase            Json?
+  baseCase            Json?
+  bearCase            Json?
+  // AI synthesis — holistic verdict from the Synthesis agent.
+  // Distinct from `recommendation` which is the human decision.
+  aiVerdict           Recommendation?
+  aiVerdictRationale  String?
+  aiTopReasonsFor     Json?
+  aiTopReasonsAgainst Json?
+  aiNextSteps         Json?
+  aiCriticalQuestions Json?
+  aiWatchpoints       Json?
+  aiMarketResearch    String?               // narrative from market researcher
+  // Financial Analyst — runs sequentially after the parallel agents so it can
+  // interpret metrics in context of risk/market/sponsor findings.
+  // Shape: { verdict, verdict_rationale, analysis (paragraphs), sensitivity[],
+  //          headline_metrics[], weak_assumption_callouts[] }
+  financialAnalysis   Json?
+  documents           Document[]
+  metrics             ExtractedMetric[]
+  assumptions         FinancialAssumption[]
+  risks               Risk[]
+  gaps                Gap[]
+  scenarios           Scenario[]
+  threads             ChatThread[]
+  reports             Report[]
+  notes               Note[]
+  comments            Comment[]
+  memories            OpportunityMemory[]
+  decision            InvestmentDecision?
+  knowledgeNodes      KnowledgeNode[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([stage])
+  @@index([clientId])
+}
+
+// ─── Documents & Knowledge ─────────────────────────────────────────
+
+enum DocumentClass {
+  INVESTMENT_MEMO
+  PITCH_DECK
+  FINANCIAL_STATEMENT
+  RENT_ROLL
+  LEGAL_AGREEMENT
+  DUE_DILIGENCE_REPORT
+  MARKET_STUDY
+  APPRAISAL
+  CONSTRUCTION_BUDGET
+  LOAN_AGREEMENT
+  PHOTO
+  EMAIL
+  OTHER
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+model Document {
+  id              String           @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity      @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  filename        String
+  mimeType        String
+  sizeBytes       Int
+  sha256          String
+  storagePath     String           // ./data/blobs/{opportunityId}/{sha256}.bin
+  documentClass   DocumentClass    @default(OTHER)
+  classConfidence Decimal?         @db.Decimal(4, 3)
+  pageCount       Int?
+  language        String?
+  ocrApplied      Boolean          @default(false)
+  status          ProcessingStatus @default(PENDING)
+  failureReason   String?
+  metadata        Json?
+  smartTags       String[]         @default([])
+  version         Int              @default(1)
+  parentId        String?
+  parent          Document?        @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions        Document[]       @relation("DocumentVersions")
+  chunks          DocumentChunk[]
+  citations       Citation[]
+  uploadedById    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([opportunityId, documentClass])
+  @@index([sha256])
+}
+
+model DocumentChunk {
+  id            String                       @id @default(cuid())
+  documentId    String
+  document      Document                     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  ordinal       Int
+  page          Int?
+  content       String
+  contentTokens Int
+  // embedding stored as pgvector — dimension depends on model; using 1024 for voyage-3-large default
+  embedding     Unsupported("vector(1024)")?
+  metadata      Json?
+  citations     Citation[]
+  createdAt     DateTime                     @default(now())
+
+  @@unique([documentId, ordinal])
+  @@index([documentId])
+}
+
+// ─── Extracted Financials & Risks ──────────────────────────────────
+
+model ExtractedMetric {
+  id              String      @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name            String      // "noi", "cap_rate", "irr", "moic", "dscr", ...
+  value           Decimal     @db.Decimal(18, 6)
+  unit            String?     // "%", "$", "x", "bps"
+  period          String?     // "Y1", "Stabilized", "FY2026"
+  source          String?     // citation back to chunk
+  sourceChunkId   String?
+  confidence      Decimal?    @db.Decimal(4, 3)
+  createdAt       DateTime    @default(now())
+
+  @@index([opportunityId, name])
+}
+
+model FinancialAssumption {
+  id              String      @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name            String      // "exit_cap_rate", "rent_growth", "vacancy"
+  value           Decimal     @db.Decimal(18, 6)
+  unit            String?
+  description     String?
+  isWeak          Boolean     @default(false)
+  rationale       String?
+  source          String?
+  createdAt       DateTime    @default(now())
+
+  @@index([opportunityId, name])
+}
+
+enum RiskCategory {
+  SPONSOR
+  LEVERAGE
+  MARKET
+  CONCENTRATION
+  LEGAL
+  CONSTRUCTION
+  TENANT
+  REFINANCE
+  REGULATORY
+  ESG
+  OTHER
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Risk {
+  id              String       @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  category        RiskCategory
+  title           String
+  description     String
+  severity        Severity     @default(MEDIUM)
+  likelihood      Severity     @default(MEDIUM)
+  mitigation      String?
+  source          String?
+  createdAt       DateTime     @default(now())
+
+  @@index([opportunityId, category])
+}
+
+enum GapPriority {
+  LOW
+  MEDIUM
+  HIGH
+  BLOCKER
+}
+
+model Gap {
+  id              String      @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  category        String      // "documents" | "data" | "assumptions" | "legal" | "market"
+  title           String
+  description     String
+  priority        GapPriority @default(MEDIUM)
+  rationale       String?     // why this gap matters
+  recommendation  String?     // what to request next
+  resolvedAt      DateTime?
+  createdAt       DateTime    @default(now())
+
+  @@index([opportunityId, priority])
+}
+
+// ─── Scenarios ─────────────────────────────────────────────────────
+
+model Scenario {
+  id              String        @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  inputs          Json          // {"vacancy": 0.25, "rateShockBps": 200, ...}
+  baseRunId       String?
+  runs            ScenarioRun[]
+  createdAt       DateTime      @default(now())
+
+  @@index([opportunityId])
+}
+
+model ScenarioRun {
+  id          String   @id @default(cuid())
+  scenarioId  String
+  scenario    Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  outputs     Json     // {"irr": 0.072, "moic": 1.4, "dscr": 1.05, ...}
+  cashflow    Json?    // {"y1": {...}, "y2": {...}, ...}
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+// ─── Chat & Memory ─────────────────────────────────────────────────
+
+model ChatThread {
+  id              String        @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  title           String
+  pinned          Boolean       @default(false)
+  topicTags       String[]      @default([])
+  messages        ChatMessage[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([opportunityId])
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+model ChatMessage {
+  id          String     @id @default(cuid())
+  threadId    String
+  thread      ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role        ChatRole
+  content     String
+  agent       String?    // which agent generated it
+  model       String?
+  inputTokens Int?
+  outputTokens Int?
+  citations   Citation[]
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+model Citation {
+  id          String         @id @default(cuid())
+  messageId   String?
+  message     ChatMessage?   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  documentId  String?
+  document    Document?      @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  chunkId     String?
+  chunk       DocumentChunk? @relation(fields: [chunkId], references: [id], onDelete: SetNull)
+  page        Int?
+  quote       String?
+  confidence  Decimal?       @db.Decimal(4, 3)
+  createdAt   DateTime       @default(now())
+
+  @@index([messageId])
+  @@index([documentId])
+}
+
+model OpportunityMemory {
+  id              String      @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  kind            String      // "summary" | "pinned" | "preference" | "concern"
+  content         String
+  source          String?     // threadId or message ref
+  createdAt       DateTime    @default(now())
+
+  @@index([opportunityId, kind])
+}
+
+// ─── Knowledge Graph (per-opportunity) ─────────────────────────────
+
+model KnowledgeNode {
+  id              String                 @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity            @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  type            String                 // property | tenant | sponsor | market | loan | risk | assumption | metric | legal_entity
+  label           String
+  attrs           Json?
+  outbound        KnowledgeEdge[]        @relation("FromNode")
+  inbound         KnowledgeEdge[]        @relation("ToNode")
+  createdAt       DateTime               @default(now())
+
+  @@index([opportunityId, type])
+}
+
+model KnowledgeEdge {
+  id        String        @id @default(cuid())
+  fromId    String
+  fromNode  KnowledgeNode @relation("FromNode", fields: [fromId], references: [id], onDelete: Cascade)
+  toId      String
+  toNode    KnowledgeNode @relation("ToNode", fields: [toId], references: [id], onDelete: Cascade)
+  relation  String        // "owns" | "tenant_of" | "sponsored_by" | "located_in" | "secured_by"
+  attrs     Json?
+  createdAt DateTime      @default(now())
+
+  @@index([fromId])
+  @@index([toId])
+}
+
+// ─── Reports & Decisions ───────────────────────────────────────────
+
+enum ReportType {
+  IC_MEMO_LONG
+  EXECUTIVE_SUMMARY
+  PRESENTATION_DECK
+}
+
+model Report {
+  id              String      @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  type            ReportType
+  title           String
+  payload         Json        // canonical report payload
+  storagePath     String?
+  format          String      // "pdf" | "pptx" | "docx"
+  generatedById   String?
+  version         Int         @default(1)
+  createdAt       DateTime    @default(now())
+
+  @@index([opportunityId, type])
+}
+
+model InvestmentDecision {
+  id              String         @id @default(cuid())
+  opportunityId   String         @unique
+  opportunity     Opportunity    @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  clientId        String?
+  client          Client?        @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  decision        Recommendation
+  rationale       String
+  conditions      String?
+  decidedAt       DateTime       @default(now())
+  decidedById     String?
+}
+
+// ─── Notes & Comments ──────────────────────────────────────────────
+
+model Note {
+  id              String       @id @default(cuid())
+  opportunityId   String
+  opportunity     Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  authorId        String?
+  author          User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  body            String
+  pinned          Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([opportunityId])
+}
+
+model Comment {
+  id              String       @id @default(cuid())
+  opportunityId   String?
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  entityType      String       // "document" | "metric" | "risk" | "thread"
+  entityId        String
+  authorId        String?
+  author          User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  body            String
+  resolvedAt      DateTime?
+  createdAt       DateTime     @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// ─── LLM telemetry ─────────────────────────────────────────────────
+
+model LlmCall {
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  endpoint         String   // chat | chat.stream | analyze.thesis | analyze.risk | analyze.gap | analyze.financial | classify | extract_entities | scenarios | report | other
+  agent            String?
+  model            String
+  opportunityId    String?
+  threadId         String?
+  inputTokens      Int      @default(0)
+  outputTokens     Int      @default(0)
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  latencyMs        Int      @default(0)
+  costUsd          Decimal  @db.Decimal(12, 6) @default(0)
+  status           String   @default("ok") // ok | error
+  errorMessage     String?
+  metadata         Json?
+
+  @@index([createdAt])
+  @@index([opportunityId, createdAt])
+  @@index([endpoint, createdAt])
+  @@index([model, createdAt])
+}
+
+// ─── Prompt versioning (audit) ─────────────────────────────────────
+
+model PromptVersion {
+  id          String   @id @default(cuid())
+  agent       String
+  version     String
+  template    String
+  inputSchema Json
+  outputSchema Json
+  model       String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([agent, version])
+}

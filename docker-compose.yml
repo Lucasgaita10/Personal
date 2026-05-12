@@ -1,0 +1,144 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: stonegate-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stonegate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_local_only}
+      POSTGRES_DB: ${POSTGRES_DB:-stonegate}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/db/prisma/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stonegate}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: stonegate-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: stonegate-chroma
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: stonegate-ai
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-stonegate}:${POSTGRES_PASSWORD:-change_me_local_only}@postgres:5432/${POSTGRES_DB:-stonegate}
+      REDIS_URL: redis://redis:6379
+      BLOB_STORAGE_DIR: /app/data/blobs
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    volumes:
+      - ./data/blobs:/app/data/blobs
+      - ./services/ai-service/app:/app/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  doc-processor:
+    build:
+      context: ./services/doc-processor
+      dockerfile: Dockerfile
+    container_name: stonegate-docs
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: 8000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-stonegate}:${POSTGRES_PASSWORD:-change_me_local_only}@postgres:5432/${POSTGRES_DB:-stonegate}
+      REDIS_URL: redis://redis:6379
+      # Override host-absolute path with the in-container path
+      BLOB_STORAGE_DIR: /app/data/blobs
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data/blobs:/app/data/blobs
+      # Bind-mount source so local edits take effect on `docker compose restart`
+      - ./services/doc-processor/app:/app/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: stonegate-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-stonegate}:${POSTGRES_PASSWORD:-change_me_local_only}@postgres:5432/${POSTGRES_DB:-stonegate}
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai-service:8000
+      DOC_SERVICE_URL: http://doc-processor:8003
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+      doc-processor:
+        condition: service_started
+    volumes:
+      - ./data/blobs:/app/data/blobs
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: stonegate-web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 3100
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+      API_BASE_URL: http://api:4000
+    ports:
+      - "3100:3100"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  chroma_data:
