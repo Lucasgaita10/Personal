@@ -31,10 +31,15 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
       { expiresIn: process.env.JWT_EXPIRES_IN ?? '12h' },
     );
 
+    // Mark cookies Secure only when the public origin is HTTPS. Tying this
+    // to NODE_ENV breaks HTTP-only prototype deploys: a Secure cookie set
+    // over plain HTTP is silently dropped by the browser, so subsequent
+    // requests come back with no token.
+    const isHttps = (process.env.APP_BASE_URL ?? '').startsWith('https://');
     reply.setCookie('sg_token', token, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: isHttps,
       path: '/',
       maxAge: 60 * 60 * 12,
     });
