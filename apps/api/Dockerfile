@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 WORKDIR /repo
 
@@ -19,7 +19,7 @@ RUN pnpm --filter @stone-gate/db prisma:generate && \
     pnpm --filter @stone-gate/db build && \
     pnpm --filter @stone-gate/api build
 
-FROM node:20-alpine AS run
+FROM node:20-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production
 # Copy the whole /repo so the Prisma client (in packages/db/node_modules/.prisma)
