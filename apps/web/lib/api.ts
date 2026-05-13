@@ -1,5 +1,13 @@
-/** Thin client for the Stone Gate Node API. Routes through /bff in dev. */
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+/** Thin client for the Stone Gate Node API.
+ *
+ * Default: route through Next.js's `/bff/*` rewrite, which the server proxies
+ * to API_BASE_URL (the internal Docker hostname in prod, localhost in dev).
+ * That way the public bundle never needs to know the public IP at build time.
+ *
+ * Override by setting NEXT_PUBLIC_API_BASE_URL at build time when you want
+ * direct browser → api calls (legacy local dev pattern).
+ */
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? '/bff';
 const TOKEN_KEY = 'sg_token';
 
 function getToken(): string | null {
