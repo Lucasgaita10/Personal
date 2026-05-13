@@ -42,6 +42,15 @@ type Summary = {
     _sum: { inputTokens: number; outputTokens: number; costUsd: number };
     _avg: { latencyMs: number };
   }>;
+  byOpportunity: Array<{
+    opportunityId: string | null;
+    opportunityName: string;
+    clientId: string | null;
+    clientName: string | null;
+    _count: { _all: number };
+    _sum: { inputTokens: number; outputTokens: number; costUsd: number };
+    _avg: { latencyMs: number };
+  }>;
   byStatus: Array<{ status: string; _count: { _all: number } }>;
   recent: Array<any>;
   daily: Array<{ day: string; calls: number; cost: number }>;
@@ -331,10 +340,91 @@ export default function ObservabilityPage() {
               </div>
             </div>
 
+            {/* By project ─ click a row to scope the rest of the page */}
+            <div className="sg-card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-sm font-semibold tracking-tight">By project</div>
+                  <div className="text-xs text-sg-muted">
+                    {opportunityId
+                      ? 'Filtered to one project — click "Clear" to see all'
+                      : 'Click a project to drill into its agent breakdown below'}
+                  </div>
+                </div>
+                {opportunityId && (
+                  <button
+                    type="button"
+                    className="text-xs text-sg-primary hover:underline"
+                    onClick={() => setOpportunityId('')}
+                  >
+                    Clear filter
+                  </button>
+                )}
+              </div>
+              {summary.byOpportunity.length === 0 ? (
+                <div className="text-xs text-sg-muted-light">
+                  No project-scoped activity yet.
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead className="text-xs text-sg-muted uppercase tracking-wider">
+                    <tr>
+                      <th className="text-left font-medium pb-2">Project</th>
+                      <th className="text-left font-medium pb-2">Client</th>
+                      <th className="text-right font-medium pb-2">Calls</th>
+                      <th className="text-right font-medium pb-2">Tokens</th>
+                      <th className="text-right font-medium pb-2">Avg cost</th>
+                      <th className="text-right font-medium pb-2">Total cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.byOpportunity.map((r) => {
+                      const calls = r._count._all || 0;
+                      const total = Number(r._sum.costUsd ?? 0);
+                      const avg = calls > 0 ? total / calls : 0;
+                      const isActive = r.opportunityId === opportunityId;
+                      return (
+                        <tr
+                          key={r.opportunityId ?? 'none'}
+                          onClick={() =>
+                            r.opportunityId &&
+                            setOpportunityId(isActive ? '' : r.opportunityId)
+                          }
+                          className={
+                            'border-t border-sg-border cursor-pointer hover:bg-sg-surface ' +
+                            (isActive ? 'bg-sg-primary-soft' : '')
+                          }
+                        >
+                          <td className="py-2 text-sg-text">{r.opportunityName}</td>
+                          <td className="py-2 text-sg-muted">
+                            {r.clientName ?? '—'}
+                          </td>
+                          <td className="py-2 text-right tabular-nums">{calls}</td>
+                          <td className="py-2 text-right tabular-nums text-sg-muted">
+                            {fmtNumber(
+                              (r._sum.inputTokens ?? 0) + (r._sum.outputTokens ?? 0),
+                            )}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-sg-muted">
+                            {fmtCost(avg)}
+                          </td>
+                          <td className="py-2 text-right tabular-nums">
+                            {fmtCost(total)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
             <div className="sg-card p-5">
               <div className="text-sm font-semibold tracking-tight mb-3">By agent</div>
               <div className="text-xs text-sg-muted mb-3">
-                Cost & latency broken down per agent role
+                {opportunityId
+                  ? 'Scoped to the selected project above'
+                  : 'Cost & latency broken down per agent role (all projects)'}
               </div>
               {summary.byAgent.length === 0 ||
               summary.byAgent.every((r) => !r.agent) ? (

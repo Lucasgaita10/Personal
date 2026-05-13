@@ -71,7 +71,7 @@ export const telemetryRoutes: FastifyPluginAsync = async (app) => {
       }
     }
 
-    const [agg, byEndpoint, byModel, byAgent, byStatus, recent] = await Promise.all([
+    const [agg, byEndpoint, byModel, byAgent, byStatus, recent, byOpportunityRaw] = await Promise.all([
       prisma.llmCall.aggregate({
         where: baseWhere,
         _count: { _all: true },
@@ -111,7 +111,40 @@ export const telemetryRoutes: FastifyPluginAsync = async (app) => {
         orderBy: { createdAt: 'desc' },
         take: 25,
       }),
+      prisma.llmCall.groupBy({
+        by: ['opportunityId'],
+        where: baseWhere,
+        _count: { _all: true },
+        _sum: { inputTokens: true, outputTokens: true, costUsd: true },
+        _avg: { latencyMs: true },
+        orderBy: { _sum: { costUsd: 'desc' } },
+      }),
     ]);
+
+    // Resolve opportunity names + client names for the by-project breakdown.
+    const oppIds = byOpportunityRaw
+      .map((r) => r.opportunityId)
+      .filter((id): id is string => !!id);
+    const opps =
+      oppIds.length > 0
+        ? await prisma.opportunity.findMany({
+            where: { id: { in: oppIds } },
+            select: { id: true, name: true, client: { select: { id: true, name: true } } },
+          })
+        : [];
+    const oppMap = new Map(opps.map((o) => [o.id, o]));
+    const byOpportunity = byOpportunityRaw.map((r) => {
+      const o = r.opportunityId ? oppMap.get(r.opportunityId) : null;
+      return {
+        opportunityId: r.opportunityId,
+        opportunityName: o?.name ?? (r.opportunityId ? '(deleted opportunity)' : '(no project)'),
+        clientId: o?.client?.id ?? null,
+        clientName: o?.client?.name ?? null,
+        _count: r._count,
+        _sum: r._sum,
+        _avg: r._avg,
+      };
+    });
 
     // Daily cost timeline (raw SQL for date_trunc) — filter applied by params
     const dailyRaw = await prisma.$queryRawUnsafe<
@@ -146,6 +179,7 @@ export const telemetryRoutes: FastifyPluginAsync = async (app) => {
       byEndpoint,
       byModel,
       byAgent,
+      byOpportunity,
       byStatus,
       recent,
       daily,
