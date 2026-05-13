@@ -349,19 +349,24 @@ export default function ObservabilityPage() {
                       <th className="text-right font-medium pb-2">Calls</th>
                       <th className="text-right font-medium pb-2">Tokens</th>
                       <th className="text-right font-medium pb-2">Avg latency</th>
-                      <th className="text-right font-medium pb-2">Cost</th>
+                      <th className="text-right font-medium pb-2">Avg cost</th>
+                      <th className="text-right font-medium pb-2">Total cost</th>
                     </tr>
                   </thead>
                   <tbody>
                     {summary.byAgent
                       .filter((r) => r.agent)
-                      .map((r) => (
+                      .map((r) => {
+                        const calls = r._count._all || 0;
+                        const total = Number(r._sum.costUsd ?? 0);
+                        const avg = calls > 0 ? total / calls : 0;
+                        return (
                         <tr key={r.agent} className="border-t border-sg-border">
                           <td className="py-2 text-sg-text font-mono text-xs">
                             {r.agent}
                           </td>
                           <td className="py-2 text-right tabular-nums">
-                            {r._count._all}
+                            {calls}
                           </td>
                           <td className="py-2 text-right tabular-nums text-sg-muted">
                             {fmtNumber(
@@ -371,11 +376,15 @@ export default function ObservabilityPage() {
                           <td className="py-2 text-right tabular-nums text-sg-muted">
                             {(Number(r._avg.latencyMs ?? 0) / 1000).toFixed(1)}s
                           </td>
+                          <td className="py-2 text-right tabular-nums text-sg-muted">
+                            {fmtCost(avg)}
+                          </td>
                           <td className="py-2 text-right tabular-nums">
-                            {fmtCost(Number(r._sum.costUsd ?? 0))}
+                            {fmtCost(total)}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                   </tbody>
                 </table>
               )}
