@@ -6,6 +6,10 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["postgresqlExtensions"]
+  // Targets:
+  //   native              — dev on macOS / Windows / current Linux host
+  //   debian-openssl-3.0.x — production Docker images (node:20-slim, Bookworm)
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
