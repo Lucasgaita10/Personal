@@ -270,7 +270,7 @@ function ReportRow({ label, report }: { label: string; report?: any }) {
           {new Date(report.createdAt).toLocaleDateString()}
         </span>
         <a
-          href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/v1/reports/${report.id}/download`}
+          href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? '/bff'}/v1/reports/${report.id}/download`}
           className="inline-flex items-center gap-1 text-xs text-sg-primary hover:underline"
         >
           <Download className="h-3 w-3" /> Download

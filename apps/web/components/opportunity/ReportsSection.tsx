@@ -157,7 +157,7 @@ export function ReportsSection() {
                   </Button>
                   {latest && (
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/v1/reports/${latest.id}/download`}
+                      href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? '/bff'}/v1/reports/${latest.id}/download`}
                       className="inline-flex items-center gap-1 text-xs text-sg-primary hover:underline"
                     >
                       <Download className="h-3 w-3" /> Download
@@ -207,7 +207,7 @@ export function ReportsSection() {
                     </td>
                     <td className="py-2.5 px-4 text-right">
                       <a
-                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/v1/reports/${r.id}/download`}
+                        href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? '/bff'}/v1/reports/${r.id}/download`}
                         className="inline-flex items-center gap-1 text-xs text-sg-primary hover:underline"
                       >
                         <Download className="h-3 w-3" /> Download

@@ -251,7 +251,7 @@ function ReportsHub({ opportunityId }: { opportunityId: string }) {
               <div className="flex items-center gap-1 shrink-0">
                 {rep && (
                   <a
-                    href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/v1/reports/${rep.id}/download`}
+                    href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? '/bff'}/v1/reports/${rep.id}/download`}
                     className="inline-flex items-center gap-1 text-xs text-sg-primary hover:underline"
                   >
                     <Download className="h-3 w-3" />

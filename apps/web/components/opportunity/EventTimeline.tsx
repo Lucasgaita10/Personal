@@ -32,7 +32,7 @@ export function EventTimeline() {
     const token =
       typeof window !== 'undefined' ? window.localStorage.getItem('sg_token') : null;
     fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ''}/v1/opportunities/${opportunity.id}/events`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL ?? '/bff'}/v1/opportunities/${opportunity.id}/events`,
       {
         credentials: 'include',
         headers: token ? { authorization: `Bearer ${token}` } : {},

@@ -42,8 +42,16 @@ export const chatRoutes: FastifyPluginAsync = async (app) => {
     const parsed = ChatSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
 
-    // Persist user message ahead of the AI call so it's visible immediately
+    // Persist user message ahead of the AI call so it's visible immediately.
+    // If the client sent a threadId, verify it still exists — clients can hold
+    // a stale id in localStorage after data has been deleted/reset. When that
+    // happens, silently fall back to creating a new thread instead of 500-ing
+    // on a foreign key violation at ChatMessage.create.
     let threadId = parsed.data.threadId;
+    if (threadId) {
+      const existing = await prisma.chatThread.findUnique({ where: { id: threadId } });
+      if (!existing) threadId = undefined;
+    }
     if (!threadId) {
       const t = await prisma.chatThread.create({
         data: {
