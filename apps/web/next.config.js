@@ -9,10 +9,8 @@ const nextConfig = {
   // tech debt to clean up later. The IDE + `pnpm dev` still type-check.
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
-  async rewrites() {
-    return [
-      { source: '/bff/:path*', destination: `${process.env.API_BASE_URL || 'http://localhost:4000'}/:path*` },
-    ];
-  },
+  // Note: the `/bff/*` proxy now lives at app/bff/[...path]/route.ts so it
+  // can set a 5-minute maxDuration (chat responses can take ~30s and the
+  // implicit rewrite timeout was severing the connection at ~30s).
 };
 module.exports = nextConfig;
