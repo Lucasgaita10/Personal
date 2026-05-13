@@ -157,14 +157,14 @@ A **Planner** decides which agents to call in what order based on the user's int
 
 | Token | Value |
 |---|---|
-| `--sg-primary` | `#780000` |
-| `--sg-primary-hover` | `#5a0000` |
+| `--sg-primary` | `#A88B47` |
+| `--sg-primary-hover` | `#8B7339` |
 | `--sg-bg` | `#FFFFFF` |
 | `--sg-surface` | `#FAFAFA` |
 | `--sg-border` | `#E5E5E5` |
 | `--sg-text` | `#0A0A0A` |
 | `--sg-text-muted` | `#6B6B6B` |
-| `--sg-accent` | `#780000` |
+| `--sg-accent` | `#A88B47` |
 | Typography | Inter / Söhne fallback, tight tracking |
 | Radius | 6px (institutional, not consumer) |
 
@@ -210,7 +210,7 @@ Three report templates, all rendered server-side:
 | **Executive Summary** (PDF) | WeasyPrint | 2–3 page principal brief |
 | **Presentation Deck** (PPTX) | python-pptx | Visual IC presentation |
 
-All templates pull from the same canonical `OpportunityReportPayload` so the three outputs are guaranteed consistent. Stone Gate brand: maroon header band (`#780000`), white body, grey rules. Charts are Recharts in the web view, matplotlib in the report.
+All templates pull from the same canonical `OpportunityReportPayload` so the three outputs are guaranteed consistent. Stone Gate brand: maroon header band (`#A88B47`), white body, grey rules. Charts are Recharts in the web view, matplotlib in the report.
 
 ---
 

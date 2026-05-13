@@ -5,7 +5,10 @@
 @tailwind utilities;
 
 :root {
-  --sg-primary: #780000;
+  /* Stonegate Capital — black wordmark + warm gold accent. */
+  --sg-primary: #a88b47;
+  --sg-primary-hover: #8b7339;
+  --sg-primary-soft: #f7f1dd;
   --sg-bg: #ffffff;
   --sg-surface: #fafafa;
   --sg-border: #e5e5e5;

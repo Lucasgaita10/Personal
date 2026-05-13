@@ -95,8 +95,8 @@ def md_to_html(text: str | None) -> Markup:
 
     return Markup("\n".join(blocks))
 
-PRIMARY = "#780000"
-PRIMARY_RGB = RGBColor(0x78, 0x00, 0x00)
+PRIMARY = "#A88B47"
+PRIMARY_RGB = RGBColor(0xA8, 0x8B, 0x47)
 WHITE_RGB = RGBColor(0xFF, 0xFF, 0xFF)
 
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -134,24 +134,24 @@ IC_MEMO_TEMPLATE = """\
      sit together on the LEFT (separated by a small gap), vertically
      centered with the logo. */
   .brand-band { position: running(header); background:#ffffff;
-                border-bottom: 1.5pt solid #780000;
+                border-bottom: 1.5pt solid #A88B47;
                 padding: 10pt 18mm;
                 display:flex; align-items:center; justify-content:flex-start;
                 gap: 14pt; }
   .brand-logo { height: 44pt; width: auto; }
   .brand-band .label { font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
-                       font-size:9.5pt; color:#780000; }
+                       font-size:9.5pt; color:#A88B47; }
 
   h1 { font-size:20pt; margin-top:6pt; margin-bottom:4pt; font-weight:700; }
-  h2 { font-size:13pt; border-bottom:1.5px solid #780000; padding-bottom:4pt;
+  h2 { font-size:13pt; border-bottom:1.5px solid #A88B47; padding-bottom:4pt;
        margin-top:22pt; margin-bottom:10pt; font-weight:600; letter-spacing:0.01em; }
-  h3 { font-size:11.5pt; color:#780000; margin-top:14pt; margin-bottom:6pt; font-weight:600; }
+  h3 { font-size:11.5pt; color:#A88B47; margin-top:14pt; margin-bottom:6pt; font-weight:600; }
   h4 { font-size:10.5pt; color:#0a0a0a; margin-top:10pt; margin-bottom:4pt; font-weight:600; }
 
   /* Markdown-rendered prose blocks */
   .md p { margin: 0 0 9pt 0; text-align: justify; }
   .md p:last-child { margin-bottom: 0; }
-  .md a { color:#780000; text-decoration: none; word-break: break-all; }
+  .md a { color:#A88B47; text-decoration: none; word-break: break-all; }
   .md a:hover { text-decoration: underline; }
   .md strong { font-weight: 600; }
   .md em { font-style: italic; }
@@ -167,7 +167,7 @@ IC_MEMO_TEMPLATE = """\
   .pill-row { margin-top:8pt; }
   .pill { display:inline-block; padding:3pt 9pt; border-radius:11pt; font-size:8.5pt;
           background:#fafafa; border:1px solid #e5e5e5; margin-right:4pt; }
-  .pill.maroon { background:#780000; color:#fff; border-color:#780000; font-weight:600; }
+  .pill.maroon { background:#A88B47; color:#fff; border-color:#A88B47; font-weight:600; }
   .pill.green { background:#10b981; color:#fff; border-color:#10b981; font-weight:600; }
   .pill.red { background:#dc2626; color:#fff; border-color:#dc2626; font-weight:600; }
   .pill.amber { background:#f59e0b; color:#fff; border-color:#f59e0b; font-weight:600; }
@@ -185,7 +185,7 @@ IC_MEMO_TEMPLATE = """\
   .version-tag { color:#6b6b6b; font-size:8pt; margin-top:4pt; }
 
   /* Verdict callout box */
-  .verdict-box { border-left: 4px solid #780000; background:#fafafa;
+  .verdict-box { border-left: 4px solid #A88B47; background:#fafafa;
                  padding: 9pt 12pt; margin-top: 8pt; }
   .verdict-box .label { color:#6b6b6b; font-size:8pt; text-transform:uppercase;
                         letter-spacing:0.08em; font-weight:600; }
@@ -362,26 +362,26 @@ EXEC_SUMMARY_TEMPLATE = """\
   @page { size: A4; margin: 22mm 18mm; }
   body { font-family:'Inter','Helvetica Neue',sans-serif; color:#0a0a0a;
          font-size:10pt; line-height:1.55; }
-  .brand-band { background:#780000; color:#fff; padding:8pt 14pt;
+  .brand-band { background:#A88B47; color:#fff; padding:8pt 14pt;
                 display:flex; align-items:center; justify-content:space-between;
                 margin:-8pt -8pt 14pt -8pt; }
   .brand-logo { height: 20pt; width:auto; mix-blend-mode: screen; }
   .brand-band .label { font-weight:600; text-transform:uppercase; font-size:8.5pt;
                        letter-spacing:.08em; color:#fff; }
   h1 { font-size:18pt; margin-top:6pt; margin-bottom:4pt; font-weight:700; }
-  h2 { font-size:11.5pt; color:#780000; margin-top:16pt; margin-bottom:6pt;
+  h2 { font-size:11.5pt; color:#A88B47; margin-top:16pt; margin-bottom:6pt;
        font-weight:600; }
   .meta { color:#6b6b6b; font-size:9pt; }
   .pill-row { margin-top:8pt; }
   .pill { display:inline-block; padding:3pt 9pt; border-radius:11pt; font-size:8.5pt;
           background:#fafafa; border:1px solid #e5e5e5; margin-right:4pt; }
-  .pill.maroon { background:#780000; color:#fff; border-color:#780000; font-weight:600; }
+  .pill.maroon { background:#A88B47; color:#fff; border-color:#A88B47; font-weight:600; }
   .pill.green { background:#10b981; color:#fff; border-color:#10b981; font-weight:600; }
   .pill.red { background:#dc2626; color:#fff; border-color:#dc2626; font-weight:600; }
   .pill.amber { background:#f59e0b; color:#fff; border-color:#f59e0b; font-weight:600; }
   .md p { margin: 0 0 8pt 0; text-align: justify; }
   .md p:last-child { margin-bottom: 0; }
-  .md a { color:#780000; text-decoration: none; word-break: break-all; }
+  .md a { color:#A88B47; text-decoration: none; word-break: break-all; }
   .md strong { font-weight: 600; }
   .md em { font-style: italic; }
   ol li { margin-bottom: 5pt; }

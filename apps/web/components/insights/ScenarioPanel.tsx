@@ -96,7 +96,7 @@ export function ScenarioPanel({ opportunityId }: { opportunityId: string }) {
                 <XAxis dataKey="year" stroke="#6b6b6b" fontSize={11} />
                 <YAxis stroke="#6b6b6b" fontSize={11} />
                 <Tooltip />
-                <Line type="monotone" dataKey="value" stroke="#780000" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="value" stroke="#A88B47" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -44,17 +44,17 @@ ARCH_HTML = r"""<!doctype html>
          font-size: 10pt; line-height: 1.55; padding: 0 18mm; }
   h1, h2, h3, h4 { color:#0a0a0a; }
   .brand-band { position: running(header); background:#ffffff;
-                border-bottom: 1.5pt solid #780000;
+                border-bottom: 1.5pt solid #A88B47;
                 padding: 10pt 18mm;
                 display: flex; align-items: center; gap: 14pt;
                 justify-content: flex-start; }
   .brand-logo { height: 44pt; width: auto; }
   .brand-band .label { font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-                       font-size: 9.5pt; color: #780000; }
+                       font-size: 9.5pt; color: #A88B47; }
   h1 { font-size: 26pt; margin-top: 4pt; margin-bottom: 4pt; font-weight: 700; }
-  h2 { font-size: 14pt; border-bottom: 1.5px solid #780000; padding-bottom: 4pt;
+  h2 { font-size: 14pt; border-bottom: 1.5px solid #A88B47; padding-bottom: 4pt;
        margin-top: 20pt; margin-bottom: 8pt; font-weight: 600; }
-  h3 { font-size: 11.5pt; color: #780000; margin-top: 14pt; margin-bottom: 6pt; }
+  h3 { font-size: 11.5pt; color: #A88B47; margin-top: 14pt; margin-bottom: 6pt; }
   p { text-align: justify; margin: 0 0 8pt 0; }
   table { width: 100%; border-collapse: collapse; margin-top: 6pt; }
   th, td { border-bottom: 1px solid #e5e5e5; padding: 6pt 8pt; text-align: left;
@@ -71,14 +71,14 @@ ARCH_HTML = r"""<!doctype html>
   .pill { display: inline-block; padding: 2pt 8pt; border-radius: 10pt;
           font-size: 8.5pt; background: #fafafa; border: 1px solid #e5e5e5;
           margin-right: 3pt; }
-  .pill.maroon { background: #780000; color: #fff; border-color: #780000; }
+  .pill.maroon { background: #A88B47; color: #fff; border-color: #A88B47; }
   .pill.green  { background: #10b981; color: #fff; border-color: #10b981; }
   .pill.amber  { background: #f59e0b; color: #fff; border-color: #f59e0b; }
   .pill.red    { background: #dc2626; color: #fff; border-color: #dc2626; }
   .toc { margin: 14pt 0; }
   .toc li { margin-bottom: 4pt; }
   .cover { page-break-after: always; padding-top: 80pt; }
-  .cover h1 { font-size: 40pt; line-height: 1.1; color: #780000; }
+  .cover h1 { font-size: 40pt; line-height: 1.1; color: #A88B47; }
   .cover .sub { font-size: 14pt; color: #6b6b6b; margin-top: 14pt; }
   .cover .meta { margin-top: 32pt; font-size: 10pt; color: #6b6b6b; }
 </style></head><body>

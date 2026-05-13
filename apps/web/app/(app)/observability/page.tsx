@@ -285,8 +285,8 @@ export default function ObservabilityPage() {
                       <Area
                         type="monotone"
                         dataKey="cost"
-                        stroke="#780000"
-                        fill="#780000"
+                        stroke="#A88B47"
+                        fill="#A88B47"
                         fillOpacity={0.15}
                         strokeWidth={2}
                       />
