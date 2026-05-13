@@ -115,7 +115,7 @@ export const telemetryRoutes: FastifyPluginAsync = async (app) => {
         by: ['opportunityId'],
         where: baseWhere,
         _count: { _all: true },
-        _sum: { inputTokens: true, outputTokens: true, costUsd: true },
+        _sum: { inputTokens: true, outputTokens: true, costUsd: true, latencyMs: true },
         _avg: { latencyMs: true },
         orderBy: { _sum: { costUsd: 'desc' } },
       }),

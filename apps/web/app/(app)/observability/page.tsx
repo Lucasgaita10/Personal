@@ -48,7 +48,7 @@ type Summary = {
     clientId: string | null;
     clientName: string | null;
     _count: { _all: number };
-    _sum: { inputTokens: number; outputTokens: number; costUsd: number };
+    _sum: { inputTokens: number; outputTokens: number; costUsd: number; latencyMs: number };
     _avg: { latencyMs: number };
   }>;
   byStatus: Array<{ status: string; _count: { _all: number } }>;
@@ -68,6 +68,24 @@ function fmtCost(v: number) {
   if (v < 0.01) return `$${v.toFixed(4)}`;
   if (v < 1) return `$${v.toFixed(3)}`;
   return `$${v.toFixed(2)}`;
+}
+
+/** Human-friendly duration: 230ms → "230ms", 47.3s, 3m 21s, 2h 14m. */
+function fmtDuration(ms: number) {
+  if (ms == null || isNaN(ms) || ms <= 0) return '—';
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  const totalSec = ms / 1000;
+  if (totalSec < 60) return `${totalSec.toFixed(1)}s`;
+  const totalMin = totalSec / 60;
+  if (totalMin < 60) {
+    const m = Math.floor(totalMin);
+    const s = Math.round(totalSec - m * 60);
+    return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  }
+  const totalH = totalMin / 60;
+  const h = Math.floor(totalH);
+  const mm = Math.round(totalMin - h * 60);
+  return mm > 0 ? `${h}h ${mm}m` : `${h}h`;
 }
 
 function fmtNumber(v: number) {
@@ -373,6 +391,8 @@ export default function ObservabilityPage() {
                       <th className="text-left font-medium pb-2">Client</th>
                       <th className="text-right font-medium pb-2">Calls</th>
                       <th className="text-right font-medium pb-2">Tokens</th>
+                      <th className="text-right font-medium pb-2">Avg time</th>
+                      <th className="text-right font-medium pb-2">Total time</th>
                       <th className="text-right font-medium pb-2">Avg cost</th>
                       <th className="text-right font-medium pb-2">Total cost</th>
                     </tr>
@@ -380,8 +400,10 @@ export default function ObservabilityPage() {
                   <tbody>
                     {summary.byOpportunity.map((r) => {
                       const calls = r._count._all || 0;
-                      const total = Number(r._sum.costUsd ?? 0);
-                      const avg = calls > 0 ? total / calls : 0;
+                      const totalCost = Number(r._sum.costUsd ?? 0);
+                      const avgCost = calls > 0 ? totalCost / calls : 0;
+                      const avgMs = Number(r._avg.latencyMs ?? 0);
+                      const totalMs = Number(r._sum.latencyMs ?? 0);
                       const isActive = r.opportunityId === opportunityId;
                       return (
                         <tr
@@ -406,10 +428,16 @@ export default function ObservabilityPage() {
                             )}
                           </td>
                           <td className="py-2 text-right tabular-nums text-sg-muted">
-                            {fmtCost(avg)}
+                            {fmtDuration(avgMs)}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-sg-muted">
+                            {fmtDuration(totalMs)}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-sg-muted">
+                            {fmtCost(avgCost)}
                           </td>
                           <td className="py-2 text-right tabular-nums">
-                            {fmtCost(total)}
+                            {fmtCost(totalCost)}
                           </td>
                         </tr>
                       );
