@@ -5,6 +5,21 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/cn';
 import { api } from '@/lib/api';
 
+// genId() is only available in secure contexts (HTTPS or localhost).
+// On plain HTTP IP-based deploys it's undefined and a call throws, killing the
+// button click before any UI update happens. Fall back to a simple RFC4122-ish
+// generator — only used for local React keys, never persisted.
+function genId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return genId();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 type Message = {
   id: string;
   role: 'USER' | 'ASSISTANT';
@@ -45,7 +60,7 @@ export function Chat({
     const message = text ?? input.trim();
     if (!message) return;
     setInput('');
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'USER', content: message };
+    const userMsg: Message = { id: genId(), role: 'USER', content: message };
     setMessages((m) => [...m, userMsg]);
     setBusy(true);
     try {
@@ -68,7 +83,7 @@ export function Chat({
       setMessages((m) => [
         ...m,
         {
-          id: crypto.randomUUID(),
+          id: genId(),
           role: 'ASSISTANT',
           content: `Error: ${err.message}`,
         },
