@@ -16,6 +16,7 @@ FROM base AS build
 COPY --from=deps /repo /repo
 COPY . .
 RUN pnpm --filter @stone-gate/db prisma:generate && \
+    pnpm --filter @stone-gate/db build && \
     pnpm --filter @stone-gate/api build
 
 FROM node:20-alpine AS run
