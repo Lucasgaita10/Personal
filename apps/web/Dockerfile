@@ -15,6 +15,12 @@ FROM base AS build
 # then overlay source.
 COPY --from=deps /repo /repo
 COPY . .
+# Next.js rewrites() is evaluated at build time, so API_BASE_URL must be
+# set BEFORE `next build` runs — otherwise `/bff/*` proxies fall back to
+# localhost:4000, which doesn't resolve inside the web container. Pin to
+# the docker-compose service name "api" which is reachable on the internal
+# network.
+ENV API_BASE_URL=http://api:4000
 RUN pnpm --filter @stone-gate/web build
 
 FROM node:20-alpine AS run
