@@ -1,0 +1,44 @@
+# Keep build context small and prevent host dev artifacts from clobbering
+# what was installed inside the deps stage of the Dockerfile.
+
+# Dependencies (installed inside the image)
+**/node_modules
+
+# Build / cache output (regenerated inside the image)
+**/.next
+**/.turbo
+**/.cache
+**/dist
+**/build
+**/out
+**/*.tsbuildinfo
+
+# Generated Prisma client (regenerated in the build stage)
+**/.prisma
+
+# Runtime / persistent data — must not be baked into images
+data/
+backups/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python virtualenvs
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+
+# VCS / editor / OS noise
+.git
+.gitignore
+.github
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.log

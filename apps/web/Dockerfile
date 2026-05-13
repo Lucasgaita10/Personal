@@ -10,8 +10,10 @@ COPY packages/shared/package.json packages/shared/package.json
 RUN pnpm install --frozen-lockfile=false
 
 FROM base AS build
-COPY --from=deps /repo/node_modules /repo/node_modules
-COPY --from=deps /repo/apps/web/node_modules /repo/apps/web/node_modules 2>/dev/null || true
+# Copy the full /repo from deps so per-workspace node_modules (which pnpm
+# creates as apps/*/node_modules and packages/*/node_modules) are present,
+# then overlay source.
+COPY --from=deps /repo /repo
 COPY . .
 RUN pnpm --filter @stone-gate/web build
 

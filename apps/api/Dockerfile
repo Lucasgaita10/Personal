@@ -11,7 +11,9 @@ COPY packages/shared/package.json packages/shared/package.json
 RUN pnpm install --frozen-lockfile=false
 
 FROM base AS build
-COPY --from=deps /repo/node_modules /repo/node_modules
+# Copy the full /repo from deps so per-workspace node_modules (which pnpm
+# creates as packages/*/node_modules) are present, then overlay source.
+COPY --from=deps /repo /repo
 COPY . .
 RUN pnpm --filter @stone-gate/db prisma:generate && \
     pnpm --filter @stone-gate/api build
@@ -19,9 +21,8 @@ RUN pnpm --filter @stone-gate/db prisma:generate && \
 FROM node:20-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /repo/apps/api/dist ./apps/api/dist
-COPY --from=build /repo/apps/api/package.json ./apps/api/package.json
-COPY --from=build /repo/packages ./packages
-COPY --from=build /repo/node_modules ./node_modules
+# Copy the whole /repo so the Prisma client (in packages/db/node_modules/.prisma)
+# and all workspace symlinks under packages/*/node_modules survive into runtime.
+COPY --from=build /repo /app
 EXPOSE 4000
 CMD ["node", "apps/api/dist/index.js"]
