@@ -1,15 +1,21 @@
 import fp from 'fastify-plugin';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 
+// Tell @fastify/jwt the shape of our payload — this also re-types
+// FastifyRequest['user'] so it stops conflicting with our augmentation.
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    payload: { sub: string; email: string; role: string };
+    user: { sub: string; email: string; role: string };
+  }
+}
+
 declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
     requireRole: (
       ...roles: string[]
     ) => (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
-  }
-  interface FastifyRequest {
-    user?: { sub: string; email: string; role: string };
   }
 }
 
@@ -26,12 +32,7 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
       if (!token) {
         return reply.code(401).send({ error: 'Unauthorized', reason: 'no_token' });
       }
-      const decoded = app.jwt.verify(token) as {
-        sub: string;
-        email: string;
-        role: string;
-      };
-      req.user = decoded;
+      req.user = app.jwt.verify(token);
     } catch (err: any) {
       req.log.warn({ err: err.message }, 'jwt verify failed');
       return reply.code(401).send({ error: 'Unauthorized', reason: 'verify_failed' });

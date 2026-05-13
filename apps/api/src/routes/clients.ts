@@ -43,7 +43,9 @@ export const clientRoutes: FastifyPluginAsync = async (app) => {
   app.post('/', async (req, reply) => {
     const parsed = ClientCreateSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    const created = await prisma.client.create({ data: parsed.data });
+    // Cast to bypass Prisma's strict JSON typing for esgPrefs (Record<string,unknown>
+    // vs InputJsonValue mismatch); JSON columns accept arbitrary JSON at runtime.
+    const created = await prisma.client.create({ data: parsed.data as any });
     await req.audit({ action: 'client.create', entityType: 'Client', entityId: created.id });
     return created;
   });
@@ -52,7 +54,7 @@ export const clientRoutes: FastifyPluginAsync = async (app) => {
     const id = (req.params as any).id as string;
     const parsed = ClientCreateSchema.partial().safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.flatten() });
-    const updated = await prisma.client.update({ where: { id }, data: parsed.data });
+    const updated = await prisma.client.update({ where: { id }, data: parsed.data as any });
     await req.audit({ action: 'client.update', entityType: 'Client', entityId: id });
     return updated;
   });
