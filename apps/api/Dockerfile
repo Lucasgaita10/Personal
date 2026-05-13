@@ -20,6 +20,13 @@ RUN pnpm --filter @stone-gate/db prisma:generate && \
     pnpm --filter @stone-gate/api build
 
 FROM node:20-slim AS run
+# Prisma 5 needs OpenSSL on the runtime image. node:20-slim is minimal and
+# doesn't include it — Prisma's auto-detect then falls back to the 1.1.x
+# engine. Install OpenSSL 3 (Bookworm's default) + ca-certificates so the
+# engine selection and outbound TLS both work.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production
 # Copy the whole /repo so the Prisma client (in packages/db/node_modules/.prisma)
