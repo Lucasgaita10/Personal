@@ -23,15 +23,14 @@ const items = [
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="w-[240px] shrink-0 bg-sg-primary text-white flex flex-col">
+    <aside className="w-[240px] shrink-0 bg-neutral-900 text-white flex flex-col">
       <div className="px-4 pt-7 pb-5 flex flex-col items-center justify-center">
         <img
-          src="/stone-gate-logo.png"
-          alt="Stone Gate"
+          src="/stone-gate-logo-on-dark.png"
+          alt="Stonegate Capital"
           className="w-full max-w-[215px] h-auto object-contain"
-          style={{ mixBlendMode: 'screen' }}
         />
-        <div className="mt-2 text-[9px] tracking-[0.18em] uppercase text-white/65 text-center leading-snug">
+        <div className="mt-3 text-[9px] tracking-[0.18em] uppercase text-white/55 text-center leading-snug">
           AI-Powered Real Estate
           <br />
           Investments Hub
@@ -48,8 +47,8 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 h-9 px-3 rounded text-sm transition-colors',
                 active
-                  ? 'bg-white text-sg-primary font-medium'
-                  : 'text-white/85 hover:bg-white/10 hover:text-white',
+                  ? 'bg-sg-primary text-white font-medium'
+                  : 'text-white/75 hover:bg-white/10 hover:text-white',
               )}
             >
               <Icon className="h-4 w-4" />
@@ -58,7 +57,7 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-white/10 text-[11px] text-white/55">
+      <div className="p-4 border-t border-white/10 text-[11px] text-white/45">
         v0.1.0 · Local
       </div>
     </aside>
