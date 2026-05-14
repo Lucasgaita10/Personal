@@ -313,6 +313,33 @@ IC_MEMO_TEMPLATE = """\
 {% endfor %}
 </table>
 
+{% if gaps %}
+<h2>Diligence Gaps</h2>
+<p class='meta'>
+  Items the diligence pack is missing or where the analyst should chase the
+  sponsor for clarification before IC.
+  {% if ic_readiness_score %}
+    IC-readiness score: <strong>{{ ic_readiness_score }} / 10</strong>.
+  {% endif %}
+</p>
+<table>
+  <tr>
+    <th style='width:14%;'>Category</th>
+    <th style='width:12%;'>Priority</th>
+    <th style='width:42%;'>Gap</th>
+    <th>Recommendation</th>
+  </tr>
+  {% for g in gaps %}
+  <tr>
+    <td>{{ g.category }}</td>
+    <td class='sev-{{ "CRITICAL" if g.priority == "BLOCKER" else g.priority }}'>{{ g.priority }}</td>
+    <td><strong>{{ g.title }}</strong><div class='meta-row'>{{ g.description }}</div></td>
+    <td>{{ g.recommendation or g.rationale or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 <h2>Bull / Base / Bear</h2>
 <h3>Bull case</h3><ul>{% for x in bull_case %}<li>{{ x }}</li>{% endfor %}</ul>
 <h3>Base case</h3><ul>{% for x in base_case %}<li>{{ x }}</li>{% endfor %}</ul>
@@ -439,6 +466,19 @@ EXEC_SUMMARY_TEMPLATE = """\
 
 <h2>Top three risks</h2>
 <ol>{% for r in risks[:3] %}<li><strong>{{ r.title }}</strong> — {{ r.description }}</li>{% endfor %}</ol>
+
+{% if gaps %}
+<h2>Top diligence gaps{% if ic_readiness_score %} <span class='meta' style='font-size:9pt;font-weight:400;'>(IC-readiness {{ ic_readiness_score }} / 10)</span>{% endif %}</h2>
+<ol>
+  {% for g in gaps[:3] %}
+  <li>
+    <strong>{{ g.title }}</strong>{% if g.priority %} · {{ g.priority }}{% endif %}
+    — {{ g.recommendation or g.description }}
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+
 <h2>Recommendation</h2><div class='md'>{{ recommendation_rationale_html }}</div>
 <div class='footer'>Stone Gate · Confidential · AI-generated, human-reviewed</div>
 </body></html>

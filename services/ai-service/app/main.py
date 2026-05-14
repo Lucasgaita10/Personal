@@ -1211,6 +1211,26 @@ async def reports_generate(body: ReportBody):
                 {"id": body.opportunityId},
             )
         ).all()
+        gaps = (
+            await conn.execute(
+                text(
+                    """SELECT category, priority, title, description, rationale, recommendation
+                       FROM "Gap" WHERE "opportunityId" = :id
+                       ORDER BY
+                         CASE priority
+                           WHEN 'BLOCKER' THEN 0 WHEN 'HIGH' THEN 1
+                           WHEN 'MEDIUM' THEN 2 ELSE 3 END,
+                         "createdAt" ASC"""
+                ),
+                {"id": body.opportunityId},
+            )
+        ).all()
+        ic_readiness = (
+            await conn.execute(
+                text('SELECT "icReadinessScore" FROM "Opportunity" WHERE id = :id'),
+                {"id": body.opportunityId},
+            )
+        ).scalar()
 
     if not opp:
         raise HTTPException(404, "opportunity not found")
@@ -1241,6 +1261,20 @@ async def reports_generate(body: ReportBody):
             {"category": r[0], "severity": r[1], "title": r[2], "description": r[3], "mitigation": r[4]}
             for r in risks
         ],
+        "gaps": [
+            {
+                "category": g[0],
+                "priority": g[1],
+                "title": g[2],
+                "description": g[3],
+                "rationale": g[4],
+                "recommendation": g[5],
+            }
+            for g in gaps
+        ],
+        "ic_readiness_score": (
+            f"{float(ic_readiness):.1f}" if ic_readiness is not None else None
+        ),
         "market_analysis": opp[27] or "See market analyst output for details.",
         "generated_at": "",
         "analysis_version": int(opp[19] or 1),
