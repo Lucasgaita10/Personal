@@ -33,7 +33,7 @@ export default function LoginPage() {
           <img
             src="/stone-gate-logo2.png"
             alt="Stone Gate"
-            className="w-full max-w-[260px] h-auto object-contain"
+            className="w-full max-w-[320px] h-auto object-contain"
           />
           <div className="text-[10px] tracking-[0.18em] uppercase text-sg-muted">
             AI-Powered Real Estate Investments Hub
